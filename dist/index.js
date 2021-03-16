@@ -28,9 +28,9 @@ program
     .option('--output-zip <value>', 'output zip path', )
     .requiredOption('--sign <value>', 'use key chain string', )
     .requiredOption('--entitlements <value>', 'entitlements plist file path', )
-    .requiredOption('--primary-bundle-id <value>', '', )
-    .requiredOption('--user <value>', 'Apple account user mail address', )
-    .requiredOption('--password <value>', 'Application password', )
+    .option('--primary-bundle-id <value>', '', )
+    .option('--user <value>', 'Apple account user mail address', )
+    .option('--password <value>', 'Application password', )
 
 program
 	.parse(process.argv);
@@ -99,8 +99,11 @@ glob( `${options.app}/**/*`, async ( err, matches ) => {
     }
 
     // 公証
-    await XcrunNotarize( options );
-
+    if( options.primaryBundleId && options.user && options.password ) {
+        await XcrunNotarize( options );
+    } else {
+        console.info("Skip notarize.");    
+    }
 
     console.log("Finish.");
 });
