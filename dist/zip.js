@@ -19,6 +19,7 @@ exports.Zip = Zip;
         if( fs.existsSync( options.outputZip ) ) {
             fs.unlinkSync( options.outputZip );
         }
+        const outputZipFullPath = path.resolve( options.outputZip );
 
         const targetAPP = path.resolve( options.app );
         const targetAppParse = path.parse( targetAPP );
@@ -34,6 +35,9 @@ exports.Zip = Zip;
                 '-ry', outputZipParse.base,
                 targetAppParse.base, '-x', '*/.DS_Store'
             ]);
+
+            // 移動
+            fs.renameSync( outputZipParse.base, outputZipFullPath );
 
             process.chdir( cwd );
 
