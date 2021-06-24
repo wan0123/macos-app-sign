@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const appdmg = require('appdmg');
 const commander = require('commander');
+const { trace } = require('console');
 
 exports.Appdmg = Appdmg;
 
@@ -23,16 +24,24 @@ exports.Appdmg = Appdmg;
         const targetAPP = path.resolve( options.app );
         const targetAppParse = path.parse( targetAPP );
 
+        let specification = {
+            title: targetAppParse.base,
+            contents: [
+                { x: 192, y: 344, type: "file", path: targetAppParse.base },
+                { x: 448, y: 344, type: "link", path: "/Applications" },
+            ]
+        };
+
+        if( options.dmgSpecJson ) {
+            var specJson = JSON.parse( fs.readFileSync( options.dmgSpecJson ) );
+            console.log( specJson );
+            specification = specJson;
+        }
+
         const ee = appdmg({ 
             target: options.outputDmg,
             basepath: targetAppParse.dir,
-            specification: {
-                title: targetAppParse.base,
-                contents: [
-                    { x: 192, y: 344, type: "file", path: targetAppParse.base },
-                    { x: 448, y: 344, type: "link", path: "/Applications" },
-                ]
-            }
+            specification: specification
         });
 
         ee.on('progress', ( info ) => {
