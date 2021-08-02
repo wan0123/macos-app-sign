@@ -25,7 +25,7 @@ async function XcrunNotarize( options ) {
         // 公証完了待ち
         let notarizeResult = 1;
         for( let i = 1; i <= RETRY_MAX; i++ ) {
-            console.log( `XcrunNotarizeWait UUID:${requestUUID} - ${i} th try. wait ${parseInt(WAIT_TIME/1000,10)} second...` );
+            console.log( `XcrunNotarizeWait UUID:${requestUUID} - ${i} try. wait ${parseInt(WAIT_TIME/1000,10)} second...` );
             await Sleep( WAIT_TIME );
             notarizeResult = await XcrunNotarizeWait( options, requestUUID, i );
             if( notarizeResult === 0 ) {

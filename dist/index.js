@@ -33,10 +33,10 @@ program
     .option('--password <value>', 'Application password', )
 
 program
-	.parse(process.argv);
+    .parse(process.argv);
 
 const options = program.opts();
-  
+
 // 
 if( !fs.statSync( options.app ).isDirectory() ) {
     console.error( `${options.app}` );
@@ -68,11 +68,13 @@ glob( `${options.app}/**/*`, async ( err, matches ) => {
 
         // ファイルの先頭8バイトチェック UnixBinと思われるもの
         const fileData = fs.readFileSync( matche, { encoding: "hex" } );
-        if( fileData.substr(0,8).toUpperCase() !== "CFFAEDFE" ) {
-            continue;
+        const macOHeader = fileData.substr(0,8).toUpperCase();
+        if( 
+                macOHeader === "CFFAEDFE" 
+            ||  macOHeader === "CAFEBABE" 
+        ) {
+            signFileList.push( matche );
         }
-
-        signFileList.push( matche );
     }
 
 
@@ -82,6 +84,11 @@ glob( `${options.app}/**/*`, async ( err, matches ) => {
     }
     for( let i = 0; i < signAppList.length; i++ ) {
         Codesign( signAppList[i], options );
+    }
+
+    // app 署名確認
+    if( !CodesineCheck( options.app ) ) {
+        throw new Error("CodesineCheck Error.");
     }
 
     // dmg 
@@ -118,7 +125,7 @@ function Codesign( target, options ) {
 
     console.log( `Codesign: ${target}` );
 
-    Spawn('/usr/bin/codesign', [
+    const result = Spawn('/usr/bin/codesign', [
         '--deep', 
         '--options', 'runtime', 
         '--timestamp', 
@@ -126,7 +133,50 @@ function Codesign( target, options ) {
         '-f', 
         '--entitlements', options.entitlements,
         target,
-    ])
+    ]);
+
+    // console.log(result);
+    SpawnResultOutput( result );
 }
 
+/**
+ * 署名チェック
+ * @param {*} targetAppPath 
+ */
+function CodesineCheck( targetAppPath ) {
 
+    console.log( `CodesineCheck: ${targetAppPath}` );
+
+    const result = Spawn('/usr/bin/codesign', [
+        '-vd', 
+        targetAppPath,
+    ]);
+
+    SpawnResultOutput( result );
+
+    const resultStr = result.stdout.toString();
+
+    // ちゃんと署名されていない模様
+    if( resultStr.indexOf(`Signature=adhoc`) >= 0 ) {
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Spawnの結果の表示
+ * @param {*} result 
+ */
+function SpawnResultOutput( result ) {
+
+    if( !result ) return;
+
+    if( result.stdout && result.stdout.length > 0 ) {
+        // console.log( `-- out -----------------` );
+        console.log( `  ${result.stdout.toString()}` );
+    }
+    if( result.stderr && result.stderr.length > 0 ) {
+        // console.log( `-- err -----------------` );
+        console.error( `  ${result.stderr.toString()}` );
+    }
+}
